@@ -17,7 +17,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def parse_core(value: Any) -> list[str] | str:
-    """Parse the CORS origins from a string or list."""
+    """
+    Parses CORS origins from a string or list.
+    
+    If given a comma-separated string, returns a list of trimmed origins. If given a list or a string starting with '[', returns the value as is. Raises a ValueError for invalid input types.
+    
+    Args:
+        value: A string or list representing CORS origins.
+    
+    Returns:
+        A list of origin strings or the original string.
+    
+    Raises:
+        ValueError: If the input is not a valid string or list format.
+    """
     if isinstance(value, str) and not value.startswith("["):
         return [i.strip() for i in value.split(",")]
     elif isinstance(value, list | str):
@@ -49,7 +62,11 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def all_cors_origins(self) -> list[str]:
-        """Return all CORS origins as a list of strings."""
+        """
+        Returns all allowed CORS origins as a list of strings.
+        
+        Includes all backend CORS origins with trailing slashes removed, plus the frontend URL.
+        """
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
             self.FRONTEND_URL
         ]
@@ -66,6 +83,12 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
+        """
+        Constructs the SQLAlchemy database URI for the configured PostgreSQL server.
+        
+        Returns:
+            The PostgreSQL DSN as a SQLAlchemy-compatible URI using the current settings.
+        """
         return MultiHostUrl.build(
             scheme="postgresql+psycopg",
             username=self.POSTGRES_USER,
@@ -78,6 +101,12 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI_LOCAL(self) -> PostgresDsn:
+        """
+        Constructs a SQLAlchemy-compatible PostgreSQL URI for a local database connection.
+        
+        Returns:
+            A PostgreSQL DSN using the configured database name, user, and password, with host set to "localhost" and port 5436.
+        """
         return MultiHostUrl.build(
             scheme="postgresql+psycopg",
             username=self.POSTGRES_USER,
@@ -97,6 +126,9 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _set_default_emails_from(self) -> Self:
+        """
+        Sets the default sender name for emails to the project name if not explicitly provided.
+        """
         if not self.EMAILS_FROM_NAME:
             self.EMAILS_FROM_NAME = self.PROJECT_NAME
         return self
@@ -106,6 +138,12 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def emails_enabled(self) -> bool:
+        """
+        Indicates whether email sending is enabled based on SMTP host and sender email configuration.
+        
+        Returns:
+            True if both SMTP host and sender email are set; otherwise, False.
+        """
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"
@@ -113,6 +151,12 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
+        """
+        Checks if a secret configuration value is set to the insecure default "changethis".
+        
+        If the value is "changethis" and the environment is "local", a warning is issued.
+        In other environments, a ValueError is raised to enforce secure configuration.
+        """
         if value == "changethis":
             message = (
                 f'The value of {var_name} is "changethis", '
@@ -125,6 +169,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
+        """
+        Ensures that sensitive secrets are not set to insecure default values.
+        
+        After model initialization, checks that `SECRET_KEY`, `POSTGRES_PASSWORD`, and `FIRST_SUPERUSER_PASSWORD` are not set to "changethis". Issues a warning in the "local" environment or raises a `ValueError` otherwise.
+        """
         self._check_default_secret("SECRET_KEY", self.SECRET_KEY)
         self._check_default_secret("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD)
         self._check_default_secret(

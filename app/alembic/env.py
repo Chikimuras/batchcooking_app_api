@@ -1,3 +1,5 @@
+from app.core.config import settings  # Import your settings module
+from app.models import SQLModel  # Import SQLModel for metadata
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -20,9 +22,6 @@ else:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-
-from app.core.config import settings  # Import your settings module
-from app.models import SQLModel  # Import SQLModel for metadata
 
 target_metadata = SQLModel.metadata
 # other values from the config, defined by the needs of env.py,

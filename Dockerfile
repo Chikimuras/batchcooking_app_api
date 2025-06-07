@@ -1,24 +1,21 @@
-﻿FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+﻿FROM python:3.12-slim
 
-# Install minimal system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates \
- && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install uv.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Set working directory inside the container
+# Créer un utilisateur sécurisé
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Copy the application into the container.
+COPY . /app
 WORKDIR /app
 
-# Copy dependency files first for better Docker layer caching
-COPY pyproject.toml uv.lock ./
+# Installer les dépendances (crée automatiquement .venv)
+RUN uv sync --frozen --no-cache
 
-# Create virtual environment and install dependencies
-RUN uv venv && uv pip install --upgrade pip && uv sync --frozen --no-cache
+# Droits utilisateur
+RUN chown -R appuser:appuser /app
+USER appuser
 
-# Copy the rest of the application code
-COPY . .
-
-# Expose port (optional, for documentation purposes)
-EXPOSE 80
-
-# Start the FastAPI app using the FastAPI CLI (from fastapi[standard])
-CMD ["/app/.venv/bin/fastapi", "run", "app/main.py", "--host", "0.0.0.0", "--port", "80"]
+# Run the application.
+CMD ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "80", "--host", "0.0.0.0"]

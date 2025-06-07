@@ -11,7 +11,6 @@ from pydantic import (
     PostgresDsn,
     computed_field,
     model_validator,
-    property,
 )
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -41,14 +40,14 @@ class Settings(BaseSettings):
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     FRONTEND_URL: str = "http://localhost:5175"
-    ENVRIONMENT: Literal["local", "staging", "production"] = "local"
+    ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_core)
     ] = []
 
     @computed_field
-    @property  # type: ignore
+    @property
     def all_cors_origins(self) -> list[str]:
         """Return all CORS origins as a list of strings."""
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
@@ -65,7 +64,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = ""
 
     @computed_field
-    @property  # type: ignore
+    @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
         return MultiHostUrl.build(
             scheme="postgresql+psycopg",
@@ -76,6 +75,17 @@ class Settings(BaseSettings):
             path=self.POSTGRES_DB,
         )
 
+    @computed_field
+    @property
+    def SQLALCHEMY_DATABASE_URI_LOCAL(self) -> PostgresDsn:
+        return MultiHostUrl.build(
+            scheme="postgresql+psycopg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            host="localhost",
+            port= 5436,
+            path=f"{self.POSTGRES_DB}",
+        )
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
     SMTP_PORT: int = 587

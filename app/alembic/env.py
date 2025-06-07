@@ -31,21 +31,20 @@ target_metadata = SQLModel.metadata
 # ... etc.
 
 def get_url():
+    """
+    Returns the appropriate database connection URL based on the current environment.
+    
+    Selects the local database URI if the environment is set to "local"; otherwise, returns the production database URI.
+    """
     return str(settings.SQLALCHEMY_DATABASE_URI_LOCAL if settings.ENVIRONMENT == "local" else settings.SQLALCHEMY_DATABASE_URI)
 
 print(f"Using database URL: {get_url()}")  # Debugging output to check the URL
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
+    """
+    Configures and runs Alembic migrations in offline mode, emitting SQL scripts without connecting to the database.
+    
+    This function sets up the Alembic context using the database URL and model metadata, enabling literal value binding and type comparison for accurate migration script generation. Migrations are output as SQL statements rather than being executed directly.
     """
     url = get_url()
     context.configure(
@@ -60,11 +59,10 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online():
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
+    """
+    Runs Alembic migrations directly against the database using a live connection.
+    
+    Creates a SQLAlchemy engine with the selected database URL, establishes a connection, and applies migrations to the database in an online mode.
     """
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url()

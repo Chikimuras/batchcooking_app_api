@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 from typing import Annotated, AsyncGenerator
 
 from sqlalchemy.exc import IntegrityError
@@ -16,7 +16,11 @@ engine = create_async_engine(
 )
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """Create a new SQLAlchemy async session."""
+    """
+    Yields an asynchronous SQLAlchemy session for database operations.
+    
+    This async generator provides a managed `AsyncSession` instance, ensuring proper resource handling for each use.
+    """
     async_session = async_sessionmaker(
         bind=engine,
         class_=AsyncSession,

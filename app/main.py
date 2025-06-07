@@ -8,6 +8,15 @@ from app.core.config import settings
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
+    """
+    Generates a unique identifier for an API route by combining its first tag and name.
+    
+    Args:
+        route: The APIRoute object for which to generate a unique ID.
+    
+    Returns:
+        A string in the format "<first_tag>-<route_name>" used as the route's unique identifier.
+    """
     return f"{route.tags[0]}-{route.name}"
 
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
